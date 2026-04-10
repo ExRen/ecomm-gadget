@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/orders.dto';
-import { OrderStatus, Prisma } from '../generated/prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { SettingsService } from '../settings/settings.service';
 

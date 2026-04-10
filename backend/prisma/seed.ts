@@ -1,4 +1,4 @@
-import { PrismaClient, Role, VoucherType } from '../src/generated/prisma/client';
+import { PrismaClient, Role, VoucherType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import slugify from 'slugify';
 import { Pool } from 'pg';

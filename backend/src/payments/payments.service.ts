@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentStatus, OrderStatus, PaymentMethod } from '../generated/prisma/client';
+import { PaymentStatus, OrderStatus, PaymentMethod } from '@prisma/client';
 import * as crypto from 'crypto';
 
 @Injectable()

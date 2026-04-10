@@ -305,7 +305,7 @@ export default function CheckoutPage() {
             </button>
 
             <div className={styles.secureInfo}>
-              <ShieldCheck size={14} /> Keamanan Terjamin via Midtrans
+              <ShieldCheck size={14} /> Keamanan Terjamin
             </div>
           </div>
         </aside>

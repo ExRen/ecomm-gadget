@@ -36,7 +36,7 @@ export default function HomePage() {
   const trustItems = [
     { icon: ShieldCheck, title: 'Jaminan Orisinal', desc: '100% produk asli & resmi' },
     { icon: Truck, title: 'Gratis Ongkir', desc: 'Seluruh Indonesia' },
-    { icon: CreditCard, title: 'Pembayaran Aman', desc: 'Proteksi penuh Midtrans' },
+    { icon: CreditCard, title: 'Pembayaran Aman', desc: 'Proteksi penuh' },
     { icon: Star, title: 'Garansi Resmi', desc: 'Klaim mudah & terpercaya' },
   ];
 
@@ -55,7 +55,7 @@ export default function HomePage() {
             </h1>
 
             <p className={styles.description}>
-              Dapatkan deretan gadget terbaru dari Apple, Samsung, dan brand ternama lainnya. Jaminan garansi resmi, produk 100% original, dan pembayaran aman melalui Midtrans.
+              Dapatkan deretan gadget terbaru dari Apple, Samsung, dan brand ternama lainnya. Jaminan garansi resmi, produk 100% original, dan pembayaran aman.
             </p>
 
             <div className={styles.ctaGroup}>

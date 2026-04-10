@@ -1,0 +1,191 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--color-bg-primary);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+}
+
+.logoArea {
+  padding: 32px 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.logoText {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.logoSub {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.backLink {
+  color: var(--color-text-muted);
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--color-primary);
+}
+
+.menu {
+  flex: 1;
+  padding: 24px 12px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.menuLink:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.menuActive {
+  background: var(--color-bg-secondary);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+
+.userArea {
+  padding: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.userName {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.userRole {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+}
+
+.main {
+  flex: 1;
+  margin-left: 240px;
+  background: var(--color-bg-primary);
+  min-height: 100vh;
+}
+
+.content {
+  padding: 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 991px) {
+  .sidebar {
+    width: 60px;
+  }
+  .logoArea, .userInfo, .logoutBtn span, .menuLink span {
+    display: none;
+  }
+  .main {
+    margin-left: 60px;
+  }
+  .menuLink {
+    justify-content: center;
+    padding: 16px 0;
+  }
+}

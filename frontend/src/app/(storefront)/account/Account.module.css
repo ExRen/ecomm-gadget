@@ -1,0 +1,161 @@
+.container {
+  padding: 64px 0;
+  max-width: 1000px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin-bottom: 48px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 24px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 64px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.navLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.navLink {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: 8px 0;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navLink:hover {
+  color: var(--color-primary);
+  padding-left: 8px;
+}
+
+.navLinkActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  padding: 32px;
+  background: var(--color-bg-primary);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardTitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-bg-primary);
+}
+
+.saveBtn {
+  margin-top: 32px;
+  padding: 14px 40px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.logoutBtn {
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 12px 24px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
+.logoutBtn:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}

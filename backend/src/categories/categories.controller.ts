@@ -1,0 +1,51 @@
+﻿import {
+  Controller, Get, Post, Patch, Delete, Body, Param, UseGuards,
+} from '@nestjs/common';
+import { CategoriesService } from './categories.service';
+import { CreateCategoryDto, UpdateCategoryDto } from './dto/categories.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators';
+import { Role } from '@prisma/client';
+
+@Controller('categories')
+export class CategoriesController {
+  constructor(private readonly categoriesService: CategoriesService) {}
+
+  @Get()
+  async findAll() {
+    return this.categoriesService.findAll();
+  }
+
+  @Get(':slug')
+  async findBySlug(@Param('slug') slug: string) {
+    return this.categoriesService.findBySlug(slug);
+  }
+}
+
+@Controller('admin/categories')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.SUPER_ADMIN)
+export class AdminCategoriesController {
+  constructor(private readonly categoriesService: CategoriesService) {}
+
+  @Get()
+  async findAll() {
+    return this.categoriesService.findAllAdmin();
+  }
+
+  @Post()
+  async create(@Body() dto: CreateCategoryDto) {
+    return this.categoriesService.create(dto);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+    return this.categoriesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.categoriesService.delete(id);
+  }
+}

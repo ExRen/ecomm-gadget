@@ -114,9 +114,10 @@ export class PaymentsService {
       });
       return {
         snapToken: transaction.token,
-        redirectUrl: transaction.redirect_url,
+        redirect_url: transaction.redirect_url,
       };
     } catch (error) {
+      console.error('Midtrans Create Transaction Error:', error);
       throw new BadRequestException('Failed to create payment: ' + error.message);
     }
   }

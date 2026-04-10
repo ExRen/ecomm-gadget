@@ -92,12 +92,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Demo credentials */}
-        {/* <div className={styles.demoBox}>
-          <div className={styles.demoTitle}>DATA DEMO (HANYA PENGEMBANGAN)</div>
-          <div className={styles.demoItem}>Admin: admin@ecommerce.com / Admin@123!</div>
-          <div className={styles.demoItem}>Customer: customer@test.com / Customer@123!</div>
-        </div> */}
+        
       </div>
     </div>
   );

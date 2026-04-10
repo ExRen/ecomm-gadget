@@ -122,7 +122,13 @@ export class PaymentsService {
   }
 
   async handleWebhook(payload: any) {
-    // Verify signature
+    // 1. Check if payload is empty or a test ping
+    if (!payload || !payload.order_id || !payload.signature_key) {
+      console.log('Received Midtrans test ping or invalid payload');
+      return { status: 'OK', message: 'Test ping received' };
+    }
+
+    // 2. Verify signature
     const serverKey = this.configService.get('MIDTRANS_SERVER_KEY');
     const hash = crypto
       .createHash('sha512')
@@ -130,7 +136,10 @@ export class PaymentsService {
       .digest('hex');
 
     if (hash !== payload.signature_key) {
-      throw new UnauthorizedException('Invalid signature');
+      console.warn(`Invalid signature for order ${payload.order_id}`);
+      // Special case: return 200 even on invalid signature to avoid Midtrans retries, 
+      // but don't process the order.
+      return { status: 'ERROR', message: 'Invalid signature' };
     }
 
     const payment = await this.prisma.payment.findUnique({

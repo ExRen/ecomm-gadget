@@ -132,7 +132,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ ord
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span className={styles.productMeta}>METODE</span>
-              <span style={{ fontWeight: 800 }}>MIDTRANS</span>
+              <span style={{ fontWeight: 800 }}>Gateway</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span className={styles.productMeta}>ORDER_ID</span>

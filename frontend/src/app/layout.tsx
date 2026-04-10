@@ -6,7 +6,7 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "GadgetPasaria - Destinasi Gadget Terlengkap & Terpercaya",
   description: "Pusat belanja smartphone, laptop, dan aksesoris gadget original dengan jaminan garansi resmi dan pembayaran aman.",
-  keywords: "gadget, smartphone, laptop, apple, samsung, belanja online, GadgetPasaria, midtrans",
+  keywords: "gadget, smartphone, laptop, apple, samsung, belanja online, GadgetPasaria",
 };
 
 export default function RootLayout({

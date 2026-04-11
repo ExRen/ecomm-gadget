@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable, NotFoundException, ConflictException, BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -179,6 +179,19 @@ export class ProductsService {
   }
 
   // Admin methods
+  async findById(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: { orderBy: { order: 'asc' } },
+        category: { select: { id: true, name: true, slug: true } },
+        tags: { include: { tag: true } },
+      },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    return { product };
+  }
+
   async create(dto: CreateProductDto, imageUrls?: { url: string; publicId: string }[]) {
     let slug = slugify(dto.name, { lower: true, strict: true });
     const existing = await this.prisma.product.findUnique({ where: { slug } });

@@ -58,3 +58,19 @@ export function getStatusLabel(status: string): string {
   };
   return labels[status] || status;
 }
+
+/**
+ * Resolves image URLs from the backend.
+ * If the URL starts with /uploads, prepend the backend base URL.
+ * If already absolute (https://...), return as-is.
+ */
+export function getImageUrl(url: string | undefined | null, fallback?: string): string {
+  if (!url) return fallback || 'https://picsum.photos/400/400?grayscale';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+    return url;
+  }
+  // For relative paths like /uploads/products/..., prepend the backend origin
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  const backendOrigin = apiUrl.replace(/\/api\/v1$/, '');
+  return `${backendOrigin}${url}`;
+}

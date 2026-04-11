@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Category, Product } from '@/types';
-import { ArrowLeft, Save, X, Upload, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from '../../../AdminUI.module.css';
 
@@ -14,6 +14,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [form, setForm] = useState({
     name: '',
@@ -47,10 +49,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             stock: String(prod.stock),
             sku: prod.sku || '',
             categoryId: prod.categoryId || '',
-            image: prod.image || '',
+            image: prod.images?.[0]?.url || '',
             weight: String(prod.weight || 0),
             isFeatured: prod.isFeatured || false,
-            isActive: prod.isActive
+            isActive: prod.isActive !== false
           });
         }
       } catch (err) {
@@ -63,15 +65,39 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     fetchData();
   }, [id, router]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('File harus berupa gambar');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ukuran file maksimum 5MB');
+      return;
+    }
+    
+    const localUrl = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setForm(p => ({ ...p, image: localUrl }));
+    toast.success('Gambar berhasil dipilih');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
       await api.patch(`/admin/products/${id}`, {
-        ...form,
+        name: form.name,
+        description: form.description,
         price: Number(form.price),
         stock: Number(form.stock),
-        weight: Number(form.weight)
+        sku: form.sku,
+        categoryId: form.categoryId,
+        weight: Number(form.weight),
+        isFeatured: form.isFeatured,
+        isActive: form.isActive
       });
       toast.success('Produk berhasil diperbarui');
       router.push('/admin/products');
@@ -185,22 +211,44 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className={styles.formGroupFull}>
-              <label className={styles.label}>URL GAMBAR PRODUK</label>
+              <label className={styles.label}>GAMBAR PRODUK</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input 
                   type="text" 
-                  value={form.image} 
-                  onChange={(e) => setForm(p => ({ ...p, image: e.target.value }))}
+                  value={selectedFile ? `✓ ${selectedFile.name}` : form.image} 
+                  onChange={(e) => { setForm(p => ({ ...p, image: e.target.value })); setSelectedFile(null); }}
                   className={styles.input}
                   style={{ flex: 1 }}
+                  placeholder="Klik tombol upload atau masukkan URL gambar..."
+                  readOnly={!!selectedFile}
                 />
-                <button type="button" className={styles.iconBtn} style={{ height: '42px', width: '42px' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  type="button" 
+                  className={styles.iconBtn} 
+                  style={{ height: '42px', width: '42px' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload Gambar"
+                >
                   <Upload size={16} />
                 </button>
               </div>
               {form.image && (
-                <div style={{ marginTop: '16px', border: '1px solid var(--color-border)', padding: '4px', width: 'fit-content' }}>
+                <div style={{ marginTop: '16px', border: '1px solid var(--color-border)', padding: '4px', width: 'fit-content', position: 'relative' }}>
                   <img src={form.image} alt="Preview" style={{ width: '120px', height: '120px', objectFit: 'cover' }} />
+                  <button 
+                    type="button"
+                    onClick={() => { setForm(p => ({ ...p, image: '' })); setSelectedFile(null); }}
+                    style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    ✕
+                  </button>
                 </div>
               )}
             </div>

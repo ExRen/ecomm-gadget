@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards,
   UseInterceptors, UploadedFiles,
 } from '@nestjs/common';
@@ -56,15 +56,19 @@ export class AdminProductsController {
     );
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.productsService.findById(id);
+  }
+
   @Post()
   @UseInterceptors(FilesInterceptor('images', 5))
   async create(
     @Body() dto: CreateProductDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    // In production, upload to Cloudinary first
     const imageUrls = files?.map((file, idx) => ({
-      url: `/uploads/${file.filename || file.originalname}`,
+      url: `/uploads/products/${file.filename}`,
       publicId: `product_${Date.now()}_${idx}`,
     }));
     return this.productsService.create(dto, imageUrls);

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Product, Review } from '@/types';
-import { formatPrice, getDiscountPercentage } from '@/lib/utils';
+import { formatPrice, getDiscountPercentage, getImageUrl } from '@/lib/utils';
 import { Heart, ShoppingCart, Star, Plus, Minus, Share2, Check } from 'lucide-react';
 import { useCartStore } from '@/stores/useCartStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
@@ -73,7 +73,7 @@ export default function ProductDetailPage() {
         <div className={styles.gallery}>
           <div className={styles.mainImageContainer}>
             <img 
-              src={images[selectedImage].url} 
+              src={getImageUrl(images[selectedImage].url)} 
               alt={product.name} 
               className={styles.mainImage}
             />
@@ -88,7 +88,7 @@ export default function ProductDetailPage() {
                   className={`${styles.thumbnail} ${selectedImage === idx ? styles.thumbnailActive : ''}`}
                   onClick={() => setSelectedImage(idx)}
                 >
-                  <img src={img.url} alt="" className={styles.thumbnailImg} />
+                  <img src={getImageUrl(img.url)} alt="" className={styles.thumbnailImg} />
                 </div>
               ))}
             </div>

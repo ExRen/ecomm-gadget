@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatPrice, getDiscountPercentage } from '@/lib/utils';
+import { formatPrice, getDiscountPercentage, getImageUrl } from '@/lib/utils';
 import { Product } from '@/types';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { useCartStore } from '@/stores/useCartStore';
@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const wishlisted = isWishlisted(product.id);
 
-  const imageUrl = product.images?.[0]?.url || `https://picsum.photos/seed/${product.sku || product.id}/400/400`;
+  const imageUrl = getImageUrl(product.images?.[0]?.url, `https://picsum.photos/seed/${product.sku || product.id}/400/400`);
   const discount = product.comparePrice ? getDiscountPercentage(Number(product.price), Number(product.comparePrice)) : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {

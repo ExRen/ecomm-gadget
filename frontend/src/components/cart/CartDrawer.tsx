@@ -1,7 +1,7 @@
 'use client';
 
 import { useCartStore } from '@/stores/useCartStore';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getImageUrl } from '@/lib/utils';
 import { X, Plus, Minus, ShoppingBag, ArrowRight, Trash2 } from 'lucide-react';
 import Link from 'next/navigation';
 import styles from './CartDrawer.module.css';
@@ -43,7 +43,7 @@ export default function CartDrawer() {
               {cart.items.map((item) => (
                 <div key={item.id} className={styles.item}>
                   <img
-                    src={item.product.images?.[0]?.url || `https://picsum.photos/seed/${item.productId}/100/100`}
+                    src={getImageUrl(item.product.images?.[0]?.url, `https://picsum.photos/seed/${item.productId}/100/100`)}
                     alt={item.product.name}
                     className={styles.itemImage}
                   />

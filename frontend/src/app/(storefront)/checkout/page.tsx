@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useCartStore } from '@/stores/useCartStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getImageUrl } from '@/lib/utils';
 import { Address } from '@/types';
 import {
   MapPin, CreditCard, ShieldCheck, Tag, ArrowLeft, Loader2, ShoppingBag, Truck, Package
@@ -202,7 +202,7 @@ export default function CheckoutPage() {
               {cart?.items?.map((item) => (
                 <div key={item.id} className={styles.item}>
                   <img
-                    src={item.product.images?.[0]?.url || `https://picsum.photos/seed/${item.productId}/100/100`}
+                    src={getImageUrl(item.product.images?.[0]?.url, `https://picsum.photos/seed/${item.productId}/100/100`)}
                     alt={item.product.name}
                     className={styles.itemImage}
                   />

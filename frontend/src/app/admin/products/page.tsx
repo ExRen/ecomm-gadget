@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Product } from '@/types';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getImageUrl } from '@/lib/utils';
 import { Plus, Search, Eye, Edit, Trash2, Power, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -117,7 +117,7 @@ export default function AdminProductsPage() {
                   <td className={styles.td}>
                     <div className={styles.productCell}>
                       <img 
-                        src={p.images?.[0]?.url || `https://picsum.photos/seed/${p.sku}/100/100`} 
+                        src={getImageUrl(p.images?.[0]?.url, `https://picsum.photos/seed/${p.sku}/100/100`)} 
                         alt="" 
                         className={styles.productImg} 
                       />

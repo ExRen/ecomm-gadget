@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Category } from '@/types';
-import { ArrowLeft, Save, X, Upload, Plus } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from '../../AdminUI.module.css';
 
@@ -12,6 +12,8 @@ export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [form, setForm] = useState({
     name: '',
@@ -35,16 +37,45 @@ export default function NewProductPage() {
     fetchCategories();
   }, []);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('File harus berupa gambar');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ukuran file maksimum 5MB');
+      return;
+    }
+    
+    const localUrl = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setForm(p => ({ ...p, image: localUrl }));
+    toast.success('Gambar berhasil dipilih');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { image, ...payload } = form;
-      await api.post('/admin/products', {
-        ...payload,
-        price: Number(form.price),
-        stock: Number(form.stock),
-        weight: Number(form.weight)
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('description', form.description);
+      formData.append('price', form.price);
+      formData.append('stock', form.stock);
+      formData.append('sku', form.sku);
+      formData.append('weight', form.weight);
+      formData.append('categoryId', form.categoryId);
+      formData.append('isFeatured', String(form.isFeatured));
+      
+      if (selectedFile) {
+        formData.append('images', selectedFile);
+      }
+      
+      await api.post('/admin/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Produk berhasil ditambahkan');
       router.push('/admin/products');
@@ -156,20 +187,46 @@ export default function NewProductPage() {
             </div>
 
             <div className={styles.formGroupFull}>
-              <label className={styles.label}>URL GAMBAR PRODUK</label>
+              <label className={styles.label}>GAMBAR PRODUK</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input 
                   type="text" 
-                  value={form.image} 
-                  onChange={(e) => setForm(p => ({ ...p, image: e.target.value }))}
+                  value={selectedFile ? `✓ ${selectedFile.name}` : form.image} 
+                  onChange={(e) => { setForm(p => ({ ...p, image: e.target.value })); setSelectedFile(null); }}
                   className={styles.input}
                   style={{ flex: 1 }}
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="Klik tombol upload atau masukkan URL gambar..."
+                  readOnly={!!selectedFile}
                 />
-                <button type="button" className={styles.iconBtn} style={{ height: '42px', width: '42px' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  type="button" 
+                  className={styles.iconBtn} 
+                  style={{ height: '42px', width: '42px' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload Gambar"
+                >
                   <Upload size={16} />
                 </button>
               </div>
+              {form.image && (
+                <div style={{ marginTop: '16px', border: '1px solid var(--color-border)', padding: '4px', width: 'fit-content', position: 'relative' }}>
+                  <img src={form.image} alt="Preview" style={{ width: '120px', height: '120px', objectFit: 'cover' }} />
+                  <button 
+                    type="button"
+                    onClick={() => { setForm(p => ({ ...p, image: '' })); setSelectedFile(null); }}
+                    style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.formGroupFull}>

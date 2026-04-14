@@ -1,5 +1,6 @@
 import {
   Injectable, NotFoundException, BadRequestException, UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,6 +10,7 @@ import * as crypto from 'crypto';
 @Injectable()
 export class PaymentsService {
   private snap: any;
+  private readonly logger = new Logger(PaymentsService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -27,7 +29,7 @@ export class PaymentsService {
         clientKey: this.configService.get('MIDTRANS_CLIENT_KEY'),
       });
     } catch (e) {
-      console.warn('Midtrans client not initialized:', e);
+      this.logger.warn('Midtrans client not initialized: ' + e);
     }
   }
 
@@ -117,15 +119,23 @@ export class PaymentsService {
         redirect_url: transaction.redirect_url,
       };
     } catch (error) {
-      console.error('Midtrans Create Transaction Error:', error);
+      this.logger.error('Midtrans Create Transaction Error:', error);
       throw new BadRequestException('Failed to create payment: ' + error.message);
     }
   }
 
+  /**
+   * SEK-002: Webhook handler with idempotency protection against replay attacks.
+   *
+   * Defense layers:
+   * 1. Signature verification (existing) — validates request came from Midtrans
+   * 2. Idempotency check (NEW) — rejects processing for orders already in terminal state
+   * 3. Atomic transaction — prevents race conditions from concurrent webhooks
+   */
   async handleWebhook(payload: any) {
     // 1. Check if payload is empty or a test ping
     if (!payload || !payload.order_id || !payload.signature_key) {
-      console.log('Received Midtrans test ping or invalid payload');
+      this.logger.log('Received Midtrans test ping or invalid payload');
       return { status: 'OK', message: 'Test ping received' };
     }
 
@@ -137,16 +147,36 @@ export class PaymentsService {
       .digest('hex');
 
     if (hash !== payload.signature_key) {
-      console.warn(`Invalid signature for order ${payload.order_id}`);
-      // Special case: return 200 even on invalid signature to avoid Midtrans retries, 
-      // but don't process the order.
+      this.logger.warn(`SEK-002: Invalid signature for order ${payload.order_id}`);
+      // Return 200 to avoid Midtrans retries, but don't process
       return { status: 'ERROR', message: 'Invalid signature' };
     }
 
     const payment = await this.prisma.payment.findUnique({
       where: { midtransOrderId: payload.order_id },
     });
-    if (!payment) throw new NotFoundException('Payment not found');
+
+    if (!payment) {
+      this.logger.warn(`SEK-002: Webhook for unknown order: ${payload.order_id}`);
+      return { status: 'OK', message: 'Order not found — ignored' };
+    }
+
+    // 3. SEK-002 IDEMPOTENCY CHECK — prevent replay attack
+    // If payment is already in a terminal state, reject duplicate processing
+    const TERMINAL_STATUSES: PaymentStatus[] = [
+      PaymentStatus.SUCCESS,
+      PaymentStatus.FAILED,
+      PaymentStatus.EXPIRED,
+      PaymentStatus.REFUNDED,
+    ];
+
+    if (TERMINAL_STATUSES.includes(payment.paymentStatus)) {
+      this.logger.log(
+        `SEK-002: Duplicate webhook ignored for order ${payload.order_id}, ` +
+        `current status: ${payment.paymentStatus}`,
+      );
+      return { status: 'OK', message: 'Already processed' };
+    }
 
     const { transaction_status, fraud_status, payment_type } = payload;
     let newPaymentStatus: PaymentStatus;
@@ -171,6 +201,7 @@ export class PaymentsService {
       return { status: 'OK' };
     }
 
+    // 4. Atomic transaction for status update
     await this.prisma.$transaction(async (tx) => {
       await tx.payment.update({
         where: { id: payment.id },
@@ -203,6 +234,10 @@ export class PaymentsService {
       }
     });
 
+    this.logger.log(
+      `Webhook processed: order ${payload.order_id} → ` +
+      `payment=${newPaymentStatus}, order=${newOrderStatus}`,
+    );
     return { status: 'OK' };
   }
 

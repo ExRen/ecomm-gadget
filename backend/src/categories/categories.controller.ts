@@ -1,14 +1,14 @@
-﻿import {
-  Controller, Get, Post, Patch, Delete, Body, Param, UseGuards,
+import {
+  Controller, Get, Post, Patch, Delete, Body, Param,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/categories.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators';
+import { Roles, Public } from '../common/decorators';
 import { Role } from '@prisma/client';
 
+// Public category endpoints
 @Controller('categories')
+@Public()
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -23,8 +23,8 @@ export class CategoriesController {
   }
 }
 
+// SEK-001: Admin category endpoints — requires ADMIN/SUPER_ADMIN role
 @Controller('admin/categories')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminCategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}

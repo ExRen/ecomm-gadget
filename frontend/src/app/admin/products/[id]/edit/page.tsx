@@ -88,16 +88,25 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     setSaving(true);
     try {
-      await api.patch(`/admin/products/${id}`, {
-        name: form.name,
-        description: form.description,
-        price: Number(form.price),
-        stock: Number(form.stock),
-        sku: form.sku,
-        categoryId: form.categoryId,
-        weight: Number(form.weight),
-        isFeatured: form.isFeatured,
-        isActive: form.isActive
+      // Use FormData to support file upload via multipart/form-data
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('description', form.description);
+      formData.append('price', String(Number(form.price)));
+      formData.append('stock', String(Number(form.stock)));
+      formData.append('sku', form.sku);
+      formData.append('categoryId', form.categoryId);
+      formData.append('weight', String(Number(form.weight)));
+      formData.append('isFeatured', String(form.isFeatured));
+      formData.append('isActive', String(form.isActive));
+
+      // Attach the image file if user selected a new one
+      if (selectedFile) {
+        formData.append('images', selectedFile);
+      }
+
+      await api.patch(`/admin/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Produk berhasil diperbarui');
       router.push('/admin/products');

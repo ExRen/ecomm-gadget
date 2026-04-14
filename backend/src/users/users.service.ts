@@ -21,10 +21,12 @@ export class UsersService {
     return { user };
   }
 
+  // SEK-005: Explicit field mapping — never spread dto directly into Prisma
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const { name, phone, avatarUrl } = dto;
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: dto,
+      data: { name, phone, avatarUrl }, // Only allowed fields
       select: { id: true, name: true, email: true, phone: true, avatarUrl: true },
     });
     return { user };
@@ -83,9 +85,11 @@ export class UsersService {
       });
     }
 
+    // SEK-005: Explicit field mapping for address updates
+    const { label, recipientName, phone, province, city, district, postalCode, street, isDefault } = dto;
     const address = await this.prisma.address.update({
       where: { id: addressId },
-      data: dto,
+      data: { label, recipientName, phone, province, city, district, postalCode, street, isDefault },
     });
     return { address };
   }

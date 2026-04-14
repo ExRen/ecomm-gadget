@@ -251,7 +251,7 @@ export class ProductsService {
     return { product };
   }
 
-  async update(id: string, dto: UpdateProductDto) {
+  async update(id: string, dto: UpdateProductDto, imageUrls?: { url: string; publicId: string }[]) {
     const existing = await this.prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Product not found');
 
@@ -280,6 +280,18 @@ export class ProductsService {
           data: { productId: id, tagId: tag.id },
         });
       }
+    }
+
+    if (imageUrls && imageUrls.length > 0) {
+      data.images = {
+        deleteMany: {},
+        create: imageUrls.map((img, idx) => ({
+          url: img.url,
+          publicId: img.publicId,
+          isPrimary: idx === 0,
+          order: idx,
+        })),
+      };
     }
 
     const product = await this.prisma.product.update({

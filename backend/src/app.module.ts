@@ -15,14 +15,30 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    // SEK-006: Multi-tier rate limiting
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 10,
+      },
+      {
+        name: 'medium',
+        ttl: 60000,
+        limit: 100,
+      },
+      {
+        name: 'long',
+        ttl: 900000,
+        limit: 300,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -38,9 +54,22 @@ import { SettingsModule } from './settings/settings.module';
     SettingsModule,
   ],
   providers: [
+    // SEK-006: Global rate limiting
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // SEK-001: Global authentication — all routes require JWT by default.
+    // Use @Public() decorator to opt-out for public endpoints.
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // SEK-001: Global authorization — checks @Roles() decorator.
+    // Endpoints without @Roles() pass through (authenticated-only).
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

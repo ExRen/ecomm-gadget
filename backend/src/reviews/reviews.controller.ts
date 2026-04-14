@@ -1,17 +1,17 @@
-﻿import {
-  Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards,
+import {
+  Controller, Get, Post, Patch, Delete, Body, Param, Query,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, Public } from '../common/decorators';
 import { Role } from '@prisma/client';
 
 @Controller('products/:productId/reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  // Public: anyone can read reviews
   @Get()
+  @Public()
   async getProductReviews(
     @Param('productId') productId: string,
     @Query('page') page?: number,
@@ -23,8 +23,8 @@ export class ReviewsController {
     );
   }
 
+  // Authenticated: customers can create reviews (global JwtAuthGuard handles auth)
   @Post()
-  @UseGuards(JwtAuthGuard)
   async createReview(
     @CurrentUser('id') userId: string,
     @Param('productId') productId: string,
@@ -34,8 +34,8 @@ export class ReviewsController {
   }
 }
 
+// SEK-001: Admin review endpoints — requires ADMIN/SUPER_ADMIN role
 @Controller('admin/reviews')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}

@@ -1,15 +1,13 @@
 import {
-  Controller, Get, Post, Patch, Body, Param, Query, UseGuards,
+  Controller, Get, Post, Patch, Body, Param, Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderStatusDto, CancelOrderDto } from './dto/orders.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, Roles } from '../common/decorators';
 import { Role } from '@prisma/client';
 
+// Authenticated customer endpoints (global JwtAuthGuard)
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
@@ -65,8 +63,8 @@ export class OrdersController {
   }
 }
 
+// SEK-001: Admin order endpoints — requires ADMIN/SUPER_ADMIN role
 @Controller('admin/orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}

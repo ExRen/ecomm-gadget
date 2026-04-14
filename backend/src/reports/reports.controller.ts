@@ -1,12 +1,10 @@
-﻿import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators';
 import { Role } from '@prisma/client';
 
+// SEK-001: Admin reports — requires ADMIN/SUPER_ADMIN role (global guards active)
 @Controller('admin/reports')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}

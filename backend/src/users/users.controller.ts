@@ -1,26 +1,23 @@
-﻿import {
-  Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards,
+import {
+  Controller, Get, Patch, Post, Delete, Body, Param, Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser, Roles } from '../common/decorators';
 import { UpdateProfileDto, CreateAddressDto, UpdateAddressDto } from './dto/users.dto';
 import { ChangePasswordDto } from '../auth/dto';
 import { Role } from '@prisma/client';
 
+// Authenticated customer endpoints (global JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser('id') userId: string) {
     return this.usersService.getProfile(userId);
   }
 
   @Patch('me')
-  @UseGuards(JwtAuthGuard)
   async updateProfile(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
@@ -29,7 +26,6 @@ export class UsersController {
   }
 
   @Patch('me/change-password')
-  @UseGuards(JwtAuthGuard)
   async changePassword(
     @CurrentUser('id') userId: string,
     @Body() dto: ChangePasswordDto,
@@ -38,13 +34,11 @@ export class UsersController {
   }
 
   @Get('me/addresses')
-  @UseGuards(JwtAuthGuard)
   async getAddresses(@CurrentUser('id') userId: string) {
     return this.usersService.getAddresses(userId);
   }
 
   @Post('me/addresses')
-  @UseGuards(JwtAuthGuard)
   async createAddress(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateAddressDto,
@@ -53,7 +47,6 @@ export class UsersController {
   }
 
   @Patch('me/addresses/:id')
-  @UseGuards(JwtAuthGuard)
   async updateAddress(
     @CurrentUser('id') userId: string,
     @Param('id') addressId: string,
@@ -63,7 +56,6 @@ export class UsersController {
   }
 
   @Delete('me/addresses/:id')
-  @UseGuards(JwtAuthGuard)
   async deleteAddress(
     @CurrentUser('id') userId: string,
     @Param('id') addressId: string,
@@ -72,7 +64,6 @@ export class UsersController {
   }
 
   @Patch('me/addresses/:id/default')
-  @UseGuards(JwtAuthGuard)
   async setDefaultAddress(
     @CurrentUser('id') userId: string,
     @Param('id') addressId: string,
@@ -81,8 +72,8 @@ export class UsersController {
   }
 }
 
+// SEK-001: Admin customer endpoints — requires ADMIN/SUPER_ADMIN role
 @Controller('admin/customers')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminCustomersController {
   constructor(private readonly usersService: UsersService) {}

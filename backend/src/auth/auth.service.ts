@@ -4,16 +4,20 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -73,13 +77,14 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
-    // Store refresh token in DB
+    // SEK-004: Store HASHED refresh token in DB (never plaintext)
+    const hashedRefreshToken = this.hashToken(tokens.refreshToken);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.prisma.refreshToken.create({
       data: {
-        token: tokens.refreshToken,
+        token: hashedRefreshToken,
         userId: user.id,
         expiresAt,
       },
@@ -98,13 +103,54 @@ export class AuthService {
     };
   }
 
+  /**
+   * SEK-004: Refresh Token Rotation with one-time use and reuse detection.
+   *
+   * Security flow:
+   * 1. Hash incoming token and look it up in DB
+   * 2. If not found (hashed), try plaintext lookup for legacy migration
+   * 3. If still not found → possible token reuse attack → revoke ALL user tokens
+   * 4. If found → delete the used token (one-time use)
+   * 5. Generate new token pair (rotation)
+   * 6. Store new hashed refresh token
+   */
   async refreshToken(token: string) {
-    const refreshToken = await this.prisma.refreshToken.findUnique({
-      where: { token },
+    const hashedToken = this.hashToken(token);
+
+    // Try hashed lookup first (new tokens)
+    let refreshToken = await this.prisma.refreshToken.findUnique({
+      where: { token: hashedToken },
       include: { user: true },
     });
 
+    // Migration: if not found by hash, try plaintext lookup (old tokens)
     if (!refreshToken) {
+      refreshToken = await this.prisma.refreshToken.findUnique({
+        where: { token },
+        include: { user: true },
+      });
+
+      if (refreshToken) {
+        this.logger.log(
+          `Migrating legacy plaintext refresh token for user ${refreshToken.userId}`,
+        );
+      }
+    }
+
+    if (!refreshToken) {
+      // SEK-004: Token not found by either method — possible reuse attack
+      try {
+        const decoded = this.jwtService.decode(token) as { sub?: string };
+        if (decoded?.sub) {
+          this.logger.warn(
+            `SEK-004: Possible token reuse attack detected for user ${decoded.sub}. ` +
+            `Revoking ALL sessions.`,
+          );
+          await this.revokeAllUserTokens(decoded.sub);
+        }
+      } catch {
+        // Token is completely invalid — just reject
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -113,18 +159,20 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token expired');
     }
 
-    // Rotate refresh token
+    // SEK-004: Delete used token immediately (one-time use / rotation)
     await this.prisma.refreshToken.delete({ where: { id: refreshToken.id } });
 
     const user = refreshToken.user;
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
+    // Store new hashed refresh token
+    const newHashedToken = this.hashToken(tokens.refreshToken);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.prisma.refreshToken.create({
       data: {
-        token: tokens.refreshToken,
+        token: newHashedToken,
         userId: user.id,
         expiresAt,
       },
@@ -138,16 +186,38 @@ export class AuthService {
 
   async logout(userId: string, refreshToken?: string) {
     if (refreshToken) {
-      await this.prisma.refreshToken.deleteMany({
-        where: { token: refreshToken },
+      // SEK-004: Try to delete by hash first, then by plaintext (migration)
+      const hashedToken = this.hashToken(refreshToken);
+      const deleted = await this.prisma.refreshToken.deleteMany({
+        where: { token: hashedToken },
       });
+      // If hashed didn't find anything, try plaintext (old tokens)
+      if (deleted.count === 0) {
+        await this.prisma.refreshToken.deleteMany({
+          where: { token: refreshToken },
+        });
+      }
     } else {
+      // Logout all sessions
       await this.prisma.refreshToken.deleteMany({
         where: { userId },
       });
     }
 
     return { message: 'Logged out successfully' };
+  }
+
+  /**
+   * SEK-004: Revoke ALL refresh tokens for a user.
+   * Called when token reuse attack is detected.
+   */
+  async revokeAllUserTokens(userId: string) {
+    const result = await this.prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
+    this.logger.warn(
+      `SEK-004: Revoked ${result.count} refresh tokens for user ${userId}`,
+    );
   }
 
   async verifyEmail(token: string) {
@@ -218,10 +288,8 @@ export class AuthService {
       },
     });
 
-    // Invalidate all refresh tokens
-    await this.prisma.refreshToken.deleteMany({
-      where: { userId: user.id },
-    });
+    // Invalidate all refresh tokens after password reset
+    await this.revokeAllUserTokens(user.id);
 
     return { message: 'Password reset successfully' };
   }
@@ -236,7 +304,7 @@ export class AuthService {
         },
       ),
       this.jwtService.signAsync(
-        { sub: userId, type: 'refresh' },
+        { sub: userId, type: 'refresh', role },
         {
           secret: this.configService.get('JWT_SECRET'),
           expiresIn: this.configService.get('JWT_REFRESH_EXPIRY') || '7d',
@@ -245,5 +313,13 @@ export class AuthService {
     ]);
 
     return { accessToken, refreshToken };
+  }
+
+  /**
+   * SEK-004: Hash refresh token with SHA-256 before storing.
+   * Never store plaintext refresh tokens in the database.
+   */
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

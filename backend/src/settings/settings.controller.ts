@@ -1,14 +1,13 @@
 import {
-  Controller, Get, Put, Body, UseGuards,
+  Controller, Get, Put, Body,
 } from '@nestjs/common';
 import { SettingsService } from './settings.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators';
+import { Roles, Public } from '../common/decorators';
 import { Role } from '@prisma/client';
 
 // Public endpoint to get shipping cost
 @Controller('settings')
+@Public()
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
@@ -19,9 +18,8 @@ export class SettingsController {
   }
 }
 
-// Admin endpoint to manage settings
+// SEK-001: Admin settings — requires ADMIN/SUPER_ADMIN role (global guards active)
 @Controller('admin/settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminSettingsController {
   constructor(private readonly settingsService: SettingsService) {}

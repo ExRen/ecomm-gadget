@@ -1,16 +1,16 @@
 import {
-  Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards,
+  Controller, Get, Post, Patch, Delete, Body, Param, Query,
   UseInterceptors, UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/products.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators';
+import { Roles, Public } from '../common/decorators';
 import { Role } from '@prisma/client';
 
+// Public product endpoints — no auth required
 @Controller('products')
+@Public()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -35,8 +35,8 @@ export class ProductsController {
   }
 }
 
+// SEK-001: Admin product endpoints — requires ADMIN/SUPER_ADMIN role
 @Controller('admin/products')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -75,8 +75,20 @@ export class AdminProductsController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
-    return this.productsService.update(id, dto);
+  @UseInterceptors(FilesInterceptor('images', 5))
+  async update(
+    @Param('id') id: string, 
+    @Body() dto: UpdateProductDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    let imageUrls = undefined;
+    if (files && files.length > 0) {
+      imageUrls = files.map((file, idx) => ({
+        url: `/uploads/products/${file.filename}`,
+        publicId: `product_${Date.now()}_${idx}`,
+      }));
+    }
+    return this.productsService.update(id, dto, imageUrls);
   }
 
   @Delete(':id')

@@ -60,17 +60,22 @@ export function getStatusLabel(status: string): string {
 }
 
 /**
- * Resolves image URLs from the backend.
- * If the URL starts with /uploads, prepend the backend base URL.
- * If already absolute (https://...), return as-is.
+ * Resolves image URLs from the database.
+ * 
+ * The backend stores full absolute URLs in the database
+ * (e.g. https://gadgetpasaria.my.id/uploads/products/xxx.jpg),
+ * so this function simply returns the URL as-is in most cases.
+ * 
+ * Backward-compatible fallback: if a legacy relative path (e.g. /uploads/...)
+ * is found, it will be prefixed with the production backend URL.
  */
 export function getImageUrl(url: string | undefined | null, fallback?: string): string {
   if (!url) return fallback || 'https://picsum.photos/400/400?grayscale';
+  // Full URL or blob — return as-is
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
     return url;
   }
-  // For relative paths like /uploads/products/..., prepend the backend origin
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-  const backendOrigin = apiUrl.replace(/\/api\/v1$/, '');
-  return `${backendOrigin}${url}`;
+  // Legacy fallback: relative paths from old data — prepend production URL
+  const backendUrl = process.env.NEXT_PUBLIC_UPLOADS_URL || 'https://gadgetpasaria.my.id';
+  return `${backendUrl}${url}`;
 }

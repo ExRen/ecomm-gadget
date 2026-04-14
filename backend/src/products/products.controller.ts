@@ -3,6 +3,7 @@ import {
   UseInterceptors, UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/products.dto';
 import { Roles, Public } from '../common/decorators';
@@ -39,7 +40,10 @@ export class ProductsController {
 @Controller('admin/products')
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Get()
   async findAll(
@@ -61,6 +65,17 @@ export class AdminProductsController {
     return this.productsService.findById(id);
   }
 
+  /**
+   * Builds a full absolute URL for an uploaded image file.
+   * Ensures the database always stores a complete, accessible URL
+   * (e.g. https://gadgetpasaria.my.id/uploads/products/xxx.jpg),
+   * so images display correctly in both local and production frontends.
+   */
+  private buildImageUrl(filename: string): string {
+    const publicUrl = this.configService.get<string>('PUBLIC_BACKEND_URL') || `http://localhost:${this.configService.get('PORT') || 3001}`;
+    return `${publicUrl}/uploads/products/${filename}`;
+  }
+
   @Post()
   @UseInterceptors(FilesInterceptor('images', 5))
   async create(
@@ -68,7 +83,7 @@ export class AdminProductsController {
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const imageUrls = files?.map((file, idx) => ({
-      url: `/uploads/products/${file.filename}`,
+      url: this.buildImageUrl(file.filename),
       publicId: `product_${Date.now()}_${idx}`,
     }));
     return this.productsService.create(dto, imageUrls);
@@ -84,7 +99,7 @@ export class AdminProductsController {
     let imageUrls = undefined;
     if (files && files.length > 0) {
       imageUrls = files.map((file, idx) => ({
-        url: `/uploads/products/${file.filename}`,
+        url: this.buildImageUrl(file.filename),
         publicId: `product_${Date.now()}_${idx}`,
       }));
     }
@@ -101,3 +116,4 @@ export class AdminProductsController {
     return this.productsService.toggleActive(id);
   }
 }
+

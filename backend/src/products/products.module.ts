@@ -5,6 +5,8 @@ import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { ProductsService } from './products.service';
 import { ProductsController, AdminProductsController } from './products.controller';
+import { UploadsController } from './uploads.controller';
+import { ImageUploadService } from './image-upload.service';
 
 const uploadDir = join(process.cwd(), 'uploads', 'products');
 if (!existsSync(uploadDir)) {
@@ -31,8 +33,8 @@ if (!existsSync(uploadDir)) {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     }),
   ],
-  controllers: [ProductsController, AdminProductsController],
-  providers: [ProductsService],
+  controllers: [ProductsController, AdminProductsController, UploadsController],
+  providers: [ProductsService, ImageUploadService],
   exports: [ProductsService],
 })
 export class ProductsModule {}

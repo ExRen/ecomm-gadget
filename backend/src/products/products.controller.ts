@@ -3,8 +3,8 @@ import {
   UseInterceptors, UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ConfigService } from '@nestjs/config';
 import { ProductsService } from './products.service';
+import { ImageUploadService } from './image-upload.service';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/products.dto';
 import { Roles, Public } from '../common/decorators';
 import { Role } from '@prisma/client';
@@ -42,7 +42,7 @@ export class ProductsController {
 export class AdminProductsController {
   constructor(
     private readonly productsService: ProductsService,
-    private readonly configService: ConfigService,
+    private readonly imageUploadService: ImageUploadService,
   ) {}
 
   @Get()
@@ -65,27 +65,15 @@ export class AdminProductsController {
     return this.productsService.findById(id);
   }
 
-  /**
-   * Builds a full absolute URL for an uploaded image file.
-   * Ensures the database always stores a complete, accessible URL
-   * (e.g. https://gadgetpasaria.my.id/uploads/products/xxx.jpg),
-   * so images display correctly in both local and production frontends.
-   */
-  private buildImageUrl(filename: string): string {
-    const publicUrl = this.configService.get<string>('PUBLIC_BACKEND_URL') || `http://localhost:${this.configService.get('PORT') || 3001}`;
-    return `${publicUrl}/uploads/products/${filename}`;
-  }
-
   @Post()
   @UseInterceptors(FilesInterceptor('images', 5))
   async create(
     @Body() dto: CreateProductDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    const imageUrls = files?.map((file, idx) => ({
-      url: this.buildImageUrl(file.filename),
-      publicId: `product_${Date.now()}_${idx}`,
-    }));
+    const imageUrls = files?.length
+      ? await this.imageUploadService.processUploadedFiles(files)
+      : undefined;
     return this.productsService.create(dto, imageUrls);
   }
 
@@ -96,13 +84,9 @@ export class AdminProductsController {
     @Body() dto: UpdateProductDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    let imageUrls = undefined;
-    if (files && files.length > 0) {
-      imageUrls = files.map((file, idx) => ({
-        url: this.buildImageUrl(file.filename),
-        publicId: `product_${Date.now()}_${idx}`,
-      }));
-    }
+    const imageUrls = files?.length
+      ? await this.imageUploadService.processUploadedFiles(files)
+      : undefined;
     return this.productsService.update(id, dto, imageUrls);
   }
 
@@ -116,4 +100,5 @@ export class AdminProductsController {
     return this.productsService.toggleActive(id);
   }
 }
+
 
